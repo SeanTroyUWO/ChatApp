@@ -16,6 +16,13 @@ RUN git clone --depth 1 https://github.com/oatpp/oatpp.git
 WORKDIR /opt/oatpp
 RUN mkdir build && cd build && cmake .. && make -j 12 install
 
+WORKDIR /opt
+RUN git clone --depth 1 https://github.com/oatpp/oatpp-postgresql.git
+
+# Build OAT_postgres_client
+WORKDIR /opt/oatpp-postgresql
+RUN mkdir build && cd build && cmake .. && make -j 12 install
+
 WORKDIR /app
 COPY . .
 RUN mkdir server_build && cd server_build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j 12 
