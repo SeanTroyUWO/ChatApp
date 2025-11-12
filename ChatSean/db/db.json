@@ -1,0 +1,6 @@
+{
+  "users": [
+    { "username": "seanerz", "password": "abcdef", "name": "Sean", "email": "sean@uwo.ca" },
+    { "username": "spenny", "password": "hijklmnop", "name": "Spencer", "email": "spencer@web.com" }
+  ]
+}
