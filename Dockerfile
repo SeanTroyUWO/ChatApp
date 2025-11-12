@@ -19,7 +19,7 @@ RUN mkdir build && cd build && cmake .. && make -j 12 install
 WORKDIR /app
 COPY . .
 RUN mkdir server_build && cd server_build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j 12 
-RUN g++ -O3 main.cpp -o server # Adjust this command to your build process
+
 
 # Stage 2: Run the application
 FROM ubuntu:24.04
