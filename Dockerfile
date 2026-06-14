@@ -37,9 +37,12 @@ RUN apt-get update && \
 
 RUN ls -la /lib
 RUN ls -la /lib/x86_64-linux-gnu
+RUN ls -la /usr/lib
 
 WORKDIR /app
 COPY --from=builder /app/server_build/server .
+
+RUN ldd ./server
 # Expose the port your application listens on
 EXPOSE 8080 
 CMD ["./server"]
