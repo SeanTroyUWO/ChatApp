@@ -18,6 +18,8 @@ int main()
         std::cerr << "url missing" << std::endl;
     }
 
+    std::cout << "url is " << url << std::endl;
+
     pqxx::connection sql{url};
 
     CROW_ROUTE(app, "/")([&sql](){
