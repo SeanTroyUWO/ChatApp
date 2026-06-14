@@ -14,7 +14,8 @@ WORKDIR /app
 COPY . .
 RUN ls -la
 RUN ls -la crow
-RUN git submodule init && git submodule update
+#RUN #git submodule init && git submodule update
+RUN git clone https://github.com/CrowCpp/Crow.git crow 
 RUN mkdir server_build && cd server_build && cmake .. && ninja -j 12
 
 
