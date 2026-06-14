@@ -24,16 +24,19 @@ RUN mkdir server_build && cd server_build && cmake -G Ninja .. && ninja -j 12
 
 
 # Stage 2: Run the application
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS production
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     libssl-dev \
     zlib1g-dev \
+    postgresql-client \
     libpq-dev \
     libpqxx-dev
 
+RUN ls -la /lib
+RUN ls -la /lib/x86_64-linux-gnu
 
 WORKDIR /app
 COPY --from=builder /app/server_build/server .
