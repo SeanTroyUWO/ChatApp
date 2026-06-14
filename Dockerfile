@@ -19,7 +19,7 @@ COPY . .
 RUN ls -la
 RUN ls -la crow
 #RUN #git submodule init && git submodule update
-RUN git clone https://github.com/CrowCpp/Crow.git crow
+RUN git clone --depth 1 https://github.com/CrowCpp/Crow.git crow
 RUN mkdir server_build && cd server_build && cmake -G Ninja .. && ninja -j 12
 
 
@@ -31,7 +31,9 @@ RUN apt-get update && \
     build-essential \
     libssl-dev \
     zlib1g-dev \
-    libpq-dev
+    libpq-dev \
+    libpqxx-dev
+
 
 WORKDIR /app
 COPY --from=builder /app/server_build/server .
