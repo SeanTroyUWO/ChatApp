@@ -3,10 +3,6 @@ project(ChatApp)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(oatpp 1.4.0 REQUIRED)
-find_package(oatpp-postgresql REQUIRED)
-find_package(PostgreSQL REQUIRED)
-
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "BUILDING DEBUG")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
@@ -15,17 +11,13 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 endif()
 
+find_package(PostgreSQL REQUIRED)
+
+set(CROW_BUILD_EXAMPLES OFF)
+set(CROW_BUILD_TESTS OFF)
+add_subdirectory(crow)
 add_executable(server main.cpp
-        controller.cpp
-        controller.hpp
-        userService.cpp
-        userService.hpp
-        DbDelegate.cpp
-        DbDelegate.hpp
-        dto.cpp
-        dto.hpp
-        ObjectMapper.hpp
 )
 
-target_link_libraries(server PUBLIC oatpp::oatpp oatpp::oatpp-postgresql pq)
+target_link_libraries(server PUBLIC PostgreSQL::PostgreSQL pq Crow::Crow)
 target_include_directories(server PUBLIC ${PostgreSQL_INCLUDE_DIRS})

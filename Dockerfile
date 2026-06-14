@@ -7,25 +7,12 @@ RUN apt-get update && \
     build-essential \
     cmake \
     libssl-dev \
-    zlib1g-dev 
-
-WORKDIR /opt
-RUN git clone --depth 1 https://github.com/SeanTroyUWO/oatpp.git
-
-# Build OAT++
-WORKDIR /opt/oatpp
-RUN mkdir build && cd build && cmake .. && make -j 12 install
-
-WORKDIR /opt
-RUN git clone --depth 1 https://github.com/SeanTroyUWO/oatpp-postgresql.git
-
-# Build OAT_postgres_client
-WORKDIR /opt/oatpp-postgresql
-RUN mkdir build && cd build && cmake .. && make -j 12 install
+    zlib1g-dev \
+    ninja-build
 
 WORKDIR /app
 COPY . .
-RUN mkdir server_build && cd server_build && cmake .. && make -j 12
+RUN mkdir server_build && cd server_build && cmake .. && ninja -j 12
 
 
 # Stage 2: Run the application
