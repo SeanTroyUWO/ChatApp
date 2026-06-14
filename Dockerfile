@@ -12,6 +12,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 COPY . .
+RUN git submodule update
 RUN mkdir server_build && cd server_build && cmake .. && ninja -j 12
 
 
