@@ -33,8 +33,7 @@ RUN apt-get update && \
     zlib1g-dev \
     postgresql-client \
     libpq-dev \
-    libpqxx-dev \
-    libpqxx
+    libpqxx-dev 
 
 RUN ls -la /lib
 RUN ls -la /lib/x86_64-linux-gnu
