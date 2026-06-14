@@ -19,6 +19,7 @@ COPY . .
 RUN ls -la
 RUN ls -la crow
 #RUN #git submodule init && git submodule update
+RUN git config --global http.sslVerify false
 RUN git clone --depth 1 https://github.com/CrowCpp/Crow.git crow
 RUN mkdir server_build && cd server_build && cmake -G Ninja .. && ninja -j 12
 
@@ -33,7 +34,7 @@ RUN apt-get update && \
     zlib1g-dev \
     postgresql-client \
     libpq-dev \
-    libpqxx-dev 
+    libpqxx-dev
 
 RUN ls -la /lib
 RUN ls -la /lib/x86_64-linux-gnu
