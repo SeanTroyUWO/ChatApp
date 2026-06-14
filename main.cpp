@@ -2,15 +2,29 @@
 #include <cstdint>
 
 #include <iostream>
+#include <string>
 
 #include "crow.h"
+#include <pqxx/pqxx>
 
 int main()
 {
     std::cout << "Starting Server" << std::endl;
     crow::SimpleApp app;
 
-    CROW_ROUTE(app, "/")([](){
+    const char* url = std::getenv("DATABASE_URL");
+    if(url == nullptr)
+    {
+        std::cerr << "url missing" << std::endl;
+    }
+
+    pqxx::connection sql{url};
+
+    CROW_ROUTE(app, "/")([&sql](){
+        std::cout << "hit hello world" << std::endl;
+        if (sql.is_open()) {
+           std::cout << "Successfully connected to: " << sql.dbname() << std::endl;
+        }
         return "Hello world";
     });
 

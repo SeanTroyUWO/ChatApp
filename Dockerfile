@@ -9,7 +9,10 @@ RUN apt-get update && \
     libssl-dev \
     zlib1g-dev \
     ninja-build \
-    libasio-dev
+    libasio-dev \
+    postgresql-client \
+    libpq-dev \
+    libpqxx-dev
 
 WORKDIR /app
 COPY . .
