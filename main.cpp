@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 
 #include "crow.h"
 #include <pqxx/pqxx>
@@ -28,6 +29,24 @@ int main()
            std::cout << "Successfully connected to: " << sql.dbname() << std::endl;
         }
         return "Hello world";
+    });
+
+    CROW_ROUTE(app, "/users")([&sql](){
+        std::cout << "hit users" << std::endl;
+        pqxx::nontransaction txn(sql);
+
+        pqxx::result result = txn.exec("SELECT id, username, email FROM users");
+
+        std::stringstream returnVal;
+        for (auto const &row : result)
+        {
+            returnVal << "ID: " << row["id"].as<int>() << " | "
+                      // Handling potential NULL values safely
+                      << "Name: " << row["username"].as<std::string>("") << " | "
+                      << "Email: " << row["email"].as<std::string>("") << "\n";
+        }
+
+        return returnVal.str();
     });
 
     uint16_t portNum;
