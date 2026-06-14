@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM gcc:13 AS builder
+FROM ubuntu:24.04 AS builder
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -33,7 +33,8 @@ RUN apt-get update && \
     zlib1g-dev \
     postgresql-client \
     libpq-dev \
-    libpqxx-dev
+    libpqxx-dev \
+    libpqxx
 
 RUN ls -la /lib
 RUN ls -la /lib/x86_64-linux-gnu
