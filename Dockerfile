@@ -8,14 +8,15 @@ RUN apt-get update && \
     cmake \
     libssl-dev \
     zlib1g-dev \
-    ninja-build
+    ninja-build \
+    libasio-dev
 
 WORKDIR /app
 COPY . .
 RUN ls -la
 RUN ls -la crow
 #RUN #git submodule init && git submodule update
-RUN git clone https://github.com/CrowCpp/Crow.git crow 
+RUN git clone https://github.com/CrowCpp/Crow.git crow
 RUN mkdir server_build && cd server_build && cmake .. && ninja -j 12
 
 
