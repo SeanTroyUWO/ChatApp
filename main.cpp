@@ -14,13 +14,18 @@ int main()
         return "Hello world";
     });
 
+    uint16_t portNum;
     /* Create TCP connection provider */
     const char *portNumStr = std::getenv("PORT");
     if(portNumStr == nullptr)
     {
         std::cerr << "bruh moment frfr" << std::endl;
+        portNum = 8080;
     }
-    uint16_t portNum = atoi(portNumStr);
+    else
+    {
+        portNum = atoi(portNumStr);
+    }
 
     app.port(portNum).multithreaded().run();
 
