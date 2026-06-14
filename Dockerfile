@@ -38,6 +38,7 @@ RUN apt-get update && \
 RUN ls -la /lib
 RUN ls -la /lib/x86_64-linux-gnu
 RUN ls -la /usr/lib
+RUN ls -la /usr/lib/x86_64-linux-gnu
 
 WORKDIR /app
 COPY --from=builder /app/server_build/server .
