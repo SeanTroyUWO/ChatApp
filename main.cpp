@@ -8,6 +8,16 @@
 #include "crow.h"
 #include <pqxx/pqxx>
 
+uint64_t encrypt(std::string input)
+{
+    uint64_t result = 0x4624748522D64145;
+    for(char &c : input)
+    {
+        result = (uint64_t)powl(result, c) * (result << 1);
+    }
+    return result;
+}
+
 int main()
 {
     std::cout << "Starting Server" << std::endl;
