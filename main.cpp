@@ -49,6 +49,21 @@ int main()
         return returnVal.str();
     });
 
+    CROW_ROUTE(app, "/account")([&sql](const crow::request& req)
+    {
+        std::cout << "hit account" << std::endl;
+        if(req.body == "")
+        {
+            return 0; 
+        }
+        std::vector params(1, req.body);
+
+        pqxx::nontransaction txn(sql);
+        pqxx::result result = txn.exec_params("SELECT COUNT(*) FROM users WHERE username = $1", req.body);
+
+        return result.front().front().as<uint32_t>(0);
+    });
+
     uint16_t portNum;
     /* Create TCP connection provider */
     const char *portNumStr = std::getenv("PORT");
