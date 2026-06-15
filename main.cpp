@@ -54,7 +54,7 @@ int main()
         std::cout << "hit account" << std::endl;
         if(req.body == "")
         {
-            return 0; 
+            return 0u;
         }
         std::vector params(1, req.body);
 
