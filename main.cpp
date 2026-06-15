@@ -56,6 +56,7 @@ int main()
         {
             return 0u;
         }
+        std::cout << "with body " << req.body << std::endl;
         std::vector params(1, req.body);
 
         pqxx::nontransaction txn(sql);
