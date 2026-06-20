@@ -70,13 +70,12 @@ int main()
         std::vector params(1, req.body);
 
         pqxx::nontransaction txn(sql);
-        pqxx::result result = txn.exec_params("SELECT COUNT(*) FROM users WHERE username = $1", req.body);
+        pqxx::result result = txn.exec_params("SELECT id FROM users WHERE username = $1 LIMIT 1", req.body);
 
         return result.front().front().as<uint32_t>(0);
     });
 
     uint16_t portNum;
-    /* Create TCP connection provider */
     const char *portNumStr = std::getenv("PORT");
     if(portNumStr == nullptr)
     {
