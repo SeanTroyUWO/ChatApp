@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+    "fmt"
+	"github.com/gorilla/websocket"
+)
 
 func main() {
     fmt.Println("Hello, World!")
