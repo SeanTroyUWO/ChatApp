@@ -137,13 +137,13 @@ int main()
 
     CROW_ROUTE(app, "/login")
     .methods(crow::HTTPMethod::PATCH)
-    ([&sql, &goodTokens](const crow::request& req)-> uint64_t
+    ([&sql, &goodTokens](const crow::request& req)-> std::string
     {
         std::cout << "hit login PATCH" << std::endl;
         std::optional<std::vector<std::string>> params = getLoginParams(req.body);
         if(!params)
         {
-            return 0;
+            return std::to_string(0);
         }
 
         const std::string& username = (*params)[0];
@@ -158,19 +158,19 @@ int main()
         uint64_t newToken = getNewToken();
         std::cout << "newToken " << newToken <<  std::endl;
         goodTokens.insert(newToken);
-        return newToken;
+        return std::to_string(newToken);
     });
 
     CROW_ROUTE(app, "/login")
     .methods(crow::HTTPMethod::POST)
-    ([&sql, &goodTokens](const crow::request& req)-> uint64_t
+    ([&sql, &goodTokens](const crow::request& req)-> std::string
     {
         std::cout << "hit login POST" << std::endl;
 
         std::optional<std::vector<std::string>> params = getLoginParams(req.body);
         if(!params)
         {
-            return 0;
+            return std::to_string(0);
         }
 
         const std::string& username = (*params)[0];
@@ -189,11 +189,11 @@ int main()
             uint64_t newToken = getNewToken();
             std::cout << "newToken " << newToken <<  std::endl;
             goodTokens.insert(newToken);
-            return newToken;
+            return std::to_string(newToken);
         }
         std::cout <<"missed " << std::endl;
 
-        return 0;
+        return std::to_string(0);
     });
 
     // CROW_WEBSOCKET_ROUTE(app, "/ws")
