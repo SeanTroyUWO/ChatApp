@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -18,7 +20,7 @@ import (
 func getUser(serverURL string, username string) int {
 
 	endpointURL := serverURL + "/account"
-	fmt.Println(endpointURL)
+	// fmt.Println(endpointURL)
 	req, err := http.NewRequest(http.MethodGet, endpointURL, strings.NewReader(username))
 	if err != nil {
 		log.Fatal(err)
@@ -26,11 +28,11 @@ func getUser(serverURL string, username string) int {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("Error fr fr")
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	fmt.Println(string(body))
+	// fmt.Println(string(body))
 	userId, err := strconv.Atoi(strings.TrimSpace(string(body)))
 	if err != nil {
 		log.Fatal(err)
@@ -39,7 +41,7 @@ func getUser(serverURL string, username string) int {
 }
 
 func loginUser(serverURL string, payload string) uint64 {
-	fmt.Println(payload)
+	// fmt.Println(payload)
 	endpointURL := serverURL + "/login"
 	req, err := http.NewRequest(http.MethodPost, endpointURL, strings.NewReader(payload))
 	if err != nil {
@@ -48,11 +50,11 @@ func loginUser(serverURL string, payload string) uint64 {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("Error fr fr")
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	fmt.Println(string(body))
+	// fmt.Println(string(body))
 	token, err := strconv.ParseUint(strings.TrimSpace(string(body)), 10, 64)
 	if err != nil {
 		log.Fatal(err)
@@ -60,7 +62,28 @@ func loginUser(serverURL string, payload string) uint64 {
 	return token
 }
 
-func getMessages(serverURL string) {
+func readMessages(conn *websocket.Conn) {
+	_, message, err := conn.ReadMessage()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var payload struct {
+		Content []struct {
+			Username string `json:"username"`
+			Text     string `json:"text"`
+		} `json:"content"`
+	}
+	if err := json.Unmarshal(message, &payload); err != nil {
+		log.Fatal(err)
+	}
+
+	for _, m := range payload.Content {
+		fmt.Printf("%s: %s\n", m.Username, m.Text)
+	}
+}
+
+func connectMessages(serverURL string) *websocket.Conn {
 	wsURL := strings.Replace(serverURL, "http://", "ws://", 1)
 	wsURL = strings.Replace(wsURL, "https://", "wss://", 1)
 	endpointURL := wsURL + "/ws"
@@ -69,13 +92,16 @@ func getMessages(serverURL string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
 
-	_, message, err := conn.ReadMessage()
-	if err != nil {
+	readMessages(conn)
+	return conn
+}
+
+func sendMessage(conn *websocket.Conn, text string) {
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(text)); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(message))
+	readMessages(conn)
 }
 
 func main() {
@@ -87,7 +113,7 @@ func main() {
 	}
 
 	serverURL := os.Getenv("SERVER_URL")
-	fmt.Println("Server: ", serverURL)
+	// fmt.Println("Server: ", serverURL)
 
 	userId := getUser(serverURL, *username)
 	if userId == 0 {
@@ -101,7 +127,7 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println()
-		fmt.Println("Password received, length:", len(password))
+		// fmt.Println("Password received, length:", len(password))
 		// Send "username password" to /login
 		payload := *username + " " + string(password)
 		token := loginUser(serverURL, payload)
@@ -109,7 +135,18 @@ func main() {
 			// Unsuccessful login
 		} else {
 			// Successful login!
-			getMessages(serverURL)
+			conn := connectMessages(serverURL)
+			defer conn.Close()
+
+			fmt.Print("Enter a message: ")
+			reader := bufio.NewReader(os.Stdin)
+			text, err := reader.ReadString('\n')
+			if err != nil {
+				log.Fatal(err)
+			}
+			text = strings.TrimSpace(text)
+
+			sendMessage(conn, text)
 		}
 	}
 }
