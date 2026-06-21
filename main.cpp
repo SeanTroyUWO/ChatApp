@@ -199,7 +199,8 @@ int main()
     CROW_WEBSOCKET_ROUTE(app, "/ws")
     .onopen([&sql, &goodTokens](crow::websocket::connection& conn){
         pqxx::nontransaction txn(sql);
-        pqxx::result result = txn.exec_params("SELECT users.username, messages.text FROM messages INNER JOIN users ON messages.fromid = users.id");
+        std::cout << "in messages" << std::endl;
+        pqxx::result result = txn.exec_params("SELECT users.username, message.text FROM message INNER JOIN users ON message.fromid = users.id");
 
         std::vector<crow::json::wvalue> messages{};
         for(auto const &row : result)
@@ -207,6 +208,7 @@ int main()
             crow::json::wvalue message;
             message["username"] = row["username"].as<std::string>();
             message["text"] = row["text"].as<std::string>();
+            std::cout << "message: " << row["username"].as<std::string>() << ":" << row["text"].as<std::string>() << std::endl;
             messages.emplace_back(std::move(message));
         }
         return messages;
