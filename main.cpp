@@ -212,7 +212,7 @@ int main()
             messages.emplace_back(std::move(message));
         }
         crow::json::wvalue ret;
-        ret["content"] = std::move(messages);
+        ret["content"] = std::move(messages); //stroy: rm content when you figure out how
         conn.send_text(ret.dump());
 
         return crow::response(200);;
@@ -221,9 +221,30 @@ int main()
     //         do_something();
     // })
     .onmessage([&](crow::websocket::connection& conn, const std::string& data, bool is_binary){
-        pqxx::nontransaction txn(sql);
         std::cout << "in message repsonse" << std::endl;
-        pqxx::result result = txn.exec_params("SELECT users.username, message.text FROM message INNER JOIN users ON message.fromid = users.id");
+        crow::json::rvalue input = crow::json::load(data);
+
+        std::string from = "";
+        std::string to = "";
+        std::string text = "";
+        if(input.has("new_message"))
+        {
+            from = input["new_message"]["from"].s();
+            to = input["new_message"]["to"].s();
+            text = input["new_message"]["text"].s();
+        }
+        else
+        {
+            std::cout << "no new message: " << data << std::endl;
+            return crow::response(400);
+        }
+
+        pqxx::nontransaction txn(sql);
+        pqxx::result result = txn.exec_params("SELECT INTO "
+                                              "INSERT INTO message (fromid, toid, timstamp, text) SELECT (fromUsers.id, toUsers.id, NOW(), $3)"
+                                              " FROM users AS fromUsers"
+                                              " INNER JOIN users AS toUsers ON toUsers.username = $2"
+                                              " WHERE fromUsers.username = $1", from, to, text);
 
         std::vector<crow::json::wvalue> messages{};
         for(auto const &row : result)
@@ -237,7 +258,7 @@ int main()
         crow::json::wvalue ret;
         ret["content"] = std::move(messages);
         conn.send_text(ret.dump());
-        return ret;
+        return crow::response(200);
     });
 
     uint16_t portNum;
