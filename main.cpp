@@ -242,8 +242,7 @@ int main()
 
         std::cout << " new message: " << data << std::endl;
         pqxx::nontransaction txn(sql);
-        pqxx::result result = txn.exec_params("SELECT INTO "
-                                              "INSERT INTO message (fromid, toid, timstamp, text) SELECT (fromUsers.id, toUsers.id, NOW(), $3)"
+        pqxx::result result = txn.exec_params("INSERT INTO message (fromid, toid, timstamp, text) SELECT (fromUsers.id, toUsers.id, NOW(), $3)"
                                               " FROM users AS fromUsers"
                                               " INNER JOIN users AS toUsers ON toUsers.username = $2"
                                               " WHERE fromUsers.username = $1", from, to, text);
