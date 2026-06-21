@@ -196,11 +196,21 @@ int main()
         return std::to_string(0);
     });
 
-    // CROW_WEBSOCKET_ROUTE(app, "/ws")
-    // .onopen([&](crow::websocket::connection& conn){
-    //     conn.
-    //     do_something();
-    // })
+    CROW_WEBSOCKET_ROUTE(app, "/ws")
+    .onopen([&sql, &goodTokens](crow::websocket::connection& conn){
+        pqxx::nontransaction txn(sql);
+        pqxx::result result = txn.exec_params("SELECT users.username, messages.text FROM messages INNER JOIN users ON messages.fromid = users.id");
+
+        std::vector<crow::json::wvalue> messages{};
+        for(auto const &row : result)
+        {
+            crow::json::wvalue message;
+            message["username"] = row["username"].as<std::string>();
+            message["text"] = row["text"].as<std::string>();
+            messages.emplace_back(std::move(message));
+        }
+        return messages;
+    });
     // .onclose([&](crow::websocket::connection& conn, const std::string& reason, uint16_t){
     //         do_something();
     // })
