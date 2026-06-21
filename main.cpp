@@ -222,6 +222,7 @@ int main()
     // })
     .onmessage([&](crow::websocket::connection& conn, const std::string& data, bool is_binary){
         std::cout << "in message repsonse" << std::endl;
+        std::cout <<"input is: " << data << std::endl;
         crow::json::rvalue input = crow::json::load(data);
 
         std::string from = "";
@@ -239,6 +240,7 @@ int main()
             return crow::response(400);
         }
 
+        std::cout << " new message: " << data << std::endl;
         pqxx::nontransaction txn(sql);
         pqxx::result result = txn.exec_params("SELECT INTO "
                                               "INSERT INTO message (fromid, toid, timstamp, text) SELECT (fromUsers.id, toUsers.id, NOW(), $3)"
