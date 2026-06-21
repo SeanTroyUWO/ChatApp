@@ -211,7 +211,7 @@ int main()
             std::cout << "message: " << row["username"].as<std::string>() << ":" << row["text"].as<std::string>() << std::endl;
             messages.emplace_back(std::move(message));
         }
-        return messages;
+        return crow::response(200, crow::json::wvalue(messages));;
     })
     // .onclose([&](crow::websocket::connection& conn, const std::string& reason, uint16_t){
     //         do_something();
@@ -231,7 +231,7 @@ int main()
             messages.emplace_back(std::move(message));
         }
         crow::json::wvalue ret;
-        ret["content"] = messages;
+        ret["content"] = std::move(messages);
         return ret;
     });
 
