@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	"golang.org/x/term"
 )
@@ -37,7 +38,7 @@ func getUser(serverURL string, username string) int {
 	return userId
 }
 
-func loginUser(serverURL string, payload string) {
+func loginUser(serverURL string, payload string) uint64 {
 	fmt.Println(payload)
 	endpointURL := serverURL + "/login"
 	req, err := http.NewRequest(http.MethodPost, endpointURL, strings.NewReader(payload))
@@ -52,6 +53,29 @@ func loginUser(serverURL string, payload string) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	fmt.Println(string(body))
+	token, err := strconv.ParseUint(strings.TrimSpace(string(body)), 10, 64)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return token
+}
+
+func getMessages(serverURL string) {
+	wsURL := strings.Replace(serverURL, "http://", "ws://", 1)
+	wsURL = strings.Replace(wsURL, "https://", "wss://", 1)
+	endpointURL := wsURL + "/ws"
+
+	conn, _, err := websocket.DefaultDialer.Dial(endpointURL, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	_, message, err := conn.ReadMessage()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(message))
 }
 
 func main() {
@@ -80,6 +104,12 @@ func main() {
 		fmt.Println("Password received, length:", len(password))
 		// Send "username password" to /login
 		payload := *username + " " + string(password)
-		loginUser(serverURL, payload)
+		token := loginUser(serverURL, payload)
+		if token == 0 {
+			// Unsuccessful login
+		} else {
+			// Successful login!
+			getMessages(serverURL)
+		}
 	}
 }
