@@ -82,19 +82,21 @@ int main()
         return returnVal.str();
     });
 
-    CROW_ROUTE(app, "/account")([&sql](const crow::request& req)
+    CROW_ROUTE(app, "/account")([&sql](const crow::request& req)->std::string
     {
         std::cout << "hit account" << std::endl;
         if(req.body == "")
         {
-            return 0u;
+            std::cout << "no body" << std::endl;
+            std::cout << req.body << std::endl;
+            return "";
         }
         std::cout << "with body " << req.body << std::endl;
 
         pqxx::nontransaction txn(sql);
         pqxx::result result = txn.exec_params("SELECT id FROM users WHERE username = $1 LIMIT 1", req.body);
 
-        return result.front().front().as<uint32_t>(0);
+        return result.front().front().as<std::string>("0");
     });
 
     CROW_ROUTE(app, "/login")
