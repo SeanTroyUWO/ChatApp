@@ -212,16 +212,26 @@ int main()
             messages.emplace_back(std::move(message));
         }
         return messages;
-    });
+    })
     // .onclose([&](crow::websocket::connection& conn, const std::string& reason, uint16_t){
     //         do_something();
     // })
-    // .onmessage([&](crow::websocket::connection& /*conn*/, const std::string& data, bool is_binary){
-    //             if (is_binary)
-    //                 do_something(data);
-    //             else
-    //                 do_something_else(data);
-    // });
+    .onmessage([&](crow::websocket::connection& /*conn*/, const std::string& data, bool is_binary){
+        pqxx::nontransaction txn(sql);
+        std::cout << "in message repsonse" << std::endl;
+        pqxx::result result = txn.exec_params("SELECT users.username, message.text FROM message INNER JOIN users ON message.fromid = users.id");
+
+        std::vector<crow::json::wvalue> messages{};
+        for(auto const &row : result)
+        {
+            crow::json::wvalue message;
+            message["username"] = row["username"].as<std::string>();
+            message["text"] = row["text"].as<std::string>();
+            std::cout << "message: " << row["username"].as<std::string>() << ":" << row["text"].as<std::string>() << std::endl;
+            messages.emplace_back(std::move(message));
+        }
+        return messages;
+    });
 
     uint16_t portNum;
     const char *portNumStr = std::getenv("PORT");
