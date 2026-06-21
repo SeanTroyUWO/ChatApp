@@ -211,8 +211,11 @@ int main()
             std::cout << "message: " << row["username"].as<std::string>() << ":" << row["text"].as<std::string>() << std::endl;
             messages.emplace_back(std::move(message));
         }
-        conn.send_text("returning message open");
-        return crow::response(200, crow::json::wvalue(messages));;
+        crow::json::wvalue ret;
+        ret["content"] = std::move(messages);
+        conn.send_text(ret.dump());
+
+        return crow::response(200);;
     })
     // .onclose([&](crow::websocket::connection& conn, const std::string& reason, uint16_t){
     //         do_something();
