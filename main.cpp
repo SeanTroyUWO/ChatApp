@@ -230,7 +230,9 @@ int main()
             std::cout << "message: " << row["username"].as<std::string>() << ":" << row["text"].as<std::string>() << std::endl;
             messages.emplace_back(std::move(message));
         }
-        return messages;
+        crow::json::wvalue ret;
+        ret["content"] = messages;
+        return ret;
     });
 
     uint16_t portNum;
