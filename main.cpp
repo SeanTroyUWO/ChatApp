@@ -2,8 +2,11 @@
 #include <cstdint>
 
 #include <iostream>
+#include <random>
+#include <ranges>
 #include <string>
 #include <sstream>
+#include <unordered_set>
 
 #include "crow.h"
 #include <pqxx/pqxx>
@@ -18,10 +21,30 @@ uint64_t encrypt(std::string input)
     return result;
 }
 
+uint64_t getNewToken()
+{
+    // 1. Seed with a non-deterministic random device source
+    static std::random_device rd;
+
+    // 2. Initialize the 64-bit Mersenne Twister engine with the seed
+    static std::mt19937_64 engine(rd());
+
+    // 3. Define a uniform distribution over the full uint64_t range
+    static std::uniform_int_distribution<uint64_t> dist(0, std::numeric_limits<uint64_t>::max());
+
+    // 4. Generate the random number
+    uint64_t random_num = dist(engine);
+
+    std::cout << "Random 64-bit Number: " << random_num << "\n";
+    return random_num;
+}
+
 int main()
 {
     std::cout << "Starting Server" << std::endl;
     crow::SimpleApp app;
+
+    std::unordered_set<uint64_t> goodTokens{};
 
     const char* url = std::getenv("DATABASE_URL");
     if(url == nullptr)
@@ -67,13 +90,117 @@ int main()
             return 0u;
         }
         std::cout << "with body " << req.body << std::endl;
-        std::vector params(1, req.body);
 
         pqxx::nontransaction txn(sql);
         pqxx::result result = txn.exec_params("SELECT id FROM users WHERE username = $1 LIMIT 1", req.body);
 
         return result.front().front().as<uint32_t>(0);
     });
+
+    CROW_ROUTE(app, "/login")
+    .methods(crow::HTTPMethod::PATCH)
+    ([&sql, &goodTokens](const crow::request& req)-> uint64_t
+    {
+        std::cout << "hit login PATCH" << std::endl;
+        if(req.body == "")
+        {
+            std::cout << "blank login" << std::endl;
+            return 0u;
+        }
+        std::cout << "with body " << req.body << std::endl;
+
+        std::vector<std::string> params{};
+        std::string segment;
+        while(std::getline(std::stringstream(req.body), segment, ' '))
+        {
+            std::cout << "param: " << segment << std::endl;
+            params.push_back(segment);
+        }
+
+        if(params.size() != 2)
+        {
+            std::cerr << "wrong number of parameters" << std::endl;
+            return 0u;
+        }
+
+        const std::string& username = params[0];
+        const std::string& password = params[1];
+        uint64_t encryptedPassword = encrypt(password);
+
+        params[1] = std::to_string(encryptedPassword);
+
+        pqxx::nontransaction txn(sql);
+        pqxx::result result = txn.exec_params("INSERT INTO users (username, password) VALUES ($1, $2)", params[0], params[1]);
+
+        uint64_t newToken = getNewToken();
+        std::cout << "newToken " << newToken <<  std::endl;
+        goodTokens.insert(newToken);
+        return newToken;
+    });
+
+    CROW_ROUTE(app, "/login")
+    .methods(crow::HTTPMethod::POST)
+    ([&sql, &goodTokens](const crow::request& req)-> uint64_t
+    {
+        std::cout << "hit login POST" << std::endl;
+        if(req.body == "")
+        {
+            std::cout << "blank login" << std::endl;
+            return 0u;
+        }
+        std::cout << "with body " << req.body << std::endl;
+
+        std::vector<std::string> params{};
+        std::string segment;
+        while(std::getline(std::stringstream(req.body), segment, ' '))
+        {
+            std::cout << "param: " << segment << std::endl;
+            params.push_back(segment);
+        }
+
+        if(params.size() != 2)
+        {
+            std::cerr << "wrong number of parameters" << std::endl;
+            return 0u;
+        }
+
+        const std::string& username = params[0];
+        const std::string& password = params[1];
+        uint64_t encryptedPassword = encrypt(password);
+
+        pqxx::nontransaction txn(sql);
+        pqxx::result result = txn.exec_params("SELECT password FROM users WHERE username = $1 LIMIT 1", username);
+        uint64_t actualEncryptedPassword = result.front().front().as<uint64_t>();
+
+        std::cout <<"actualEncryptedPassword: " << actualEncryptedPassword << std::endl;
+        std::cout <<"encryptedPassword: " << encryptedPassword << std::endl;
+
+        if(actualEncryptedPassword == encryptedPassword)
+        {
+            uint64_t newToken = getNewToken();
+            std::cout << "newToken " << newToken <<  std::endl;
+            goodTokens.insert(newToken);
+            return newToken;
+        }
+        std::cout <<"missed " << std::endl;
+
+        return 0;
+    });
+
+    // CROW_WEBSOCKET_ROUTE(app, "/ws")
+    // .onopen([&](crow::websocket::connection& conn){
+    //     conn.
+    //     do_something();
+    // })
+    // .onclose([&](crow::websocket::connection& conn, const std::string& reason, uint16_t){
+    //         do_something();
+    // })
+    // .onmessage([&](crow::websocket::connection& /*conn*/, const std::string& data, bool is_binary){
+    //             if (is_binary)
+    //                 do_something(data);
+    //             else
+    //                 do_something_else(data);
+    // });
 
     uint16_t portNum;
     const char *portNumStr = std::getenv("PORT");
