@@ -211,12 +211,13 @@ int main()
             std::cout << "message: " << row["username"].as<std::string>() << ":" << row["text"].as<std::string>() << std::endl;
             messages.emplace_back(std::move(message));
         }
+        conn.send_text("returning message open");
         return crow::response(200, crow::json::wvalue(messages));;
     })
     // .onclose([&](crow::websocket::connection& conn, const std::string& reason, uint16_t){
     //         do_something();
     // })
-    .onmessage([&](crow::websocket::connection& /*conn*/, const std::string& data, bool is_binary){
+    .onmessage([&](crow::websocket::connection& conn, const std::string& data, bool is_binary){
         pqxx::nontransaction txn(sql);
         std::cout << "in message repsonse" << std::endl;
         pqxx::result result = txn.exec_params("SELECT users.username, message.text FROM message INNER JOIN users ON message.fromid = users.id");
@@ -232,6 +233,7 @@ int main()
         }
         crow::json::wvalue ret;
         ret["content"] = std::move(messages);
+        conn.send_text(ret.dump());
         return ret;
     });
 
