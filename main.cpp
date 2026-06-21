@@ -39,6 +39,40 @@ uint64_t getNewToken()
     return random_num;
 }
 
+std::optional<std::vector<std::string>> getLoginParams(const std::string& input)
+{
+    std::cout << "hit login PATCH" << std::endl;
+    if(input == "")
+    {
+        std::cout << "blank login" << std::endl;
+        return std::nullopt;
+    }
+    std::cout << "with body " << input << std::endl;
+
+    std::vector<std::string> params{};
+    std::string segment;
+    std::istringstream iss(input);
+    int i = 0;
+    while(std::getline(iss, segment, ' '))
+    {
+        std::cout << "param: " << segment << std::endl;
+        params.push_back(segment);
+        i += 1;
+        if(i == 4)
+        {
+            return std::nullopt;
+        }
+    }
+
+    if(params.size() != 2)
+    {
+        std::cerr << "wrong number of parameters" << std::endl;
+        return std::nullopt;
+    }
+
+    return params;
+}
+
 int main()
 {
     std::cout << "Starting Server" << std::endl;
@@ -82,7 +116,9 @@ int main()
         return returnVal.str();
     });
 
-    CROW_ROUTE(app, "/account")([&sql](const crow::request& req)->std::string
+    CROW_ROUTE(app, "/account")
+    .methods(crow::HTTPMethod::GET)
+    ([&sql](const crow::request& req)->std::string
     {
         std::cout << "hit account" << std::endl;
         if(req.body == "")
@@ -104,35 +140,20 @@ int main()
     ([&sql, &goodTokens](const crow::request& req)-> uint64_t
     {
         std::cout << "hit login PATCH" << std::endl;
-        if(req.body == "")
+        std::optional<std::vector<std::string>> params = getLoginParams(req.body);
+        if(!params)
         {
-            std::cout << "blank login" << std::endl;
-            return 0u;
-        }
-        std::cout << "with body " << req.body << std::endl;
-
-        std::vector<std::string> params{};
-        std::string segment;
-        while(std::getline(std::stringstream(req.body), segment, ' '))
-        {
-            std::cout << "param: " << segment << std::endl;
-            params.push_back(segment);
+            return 0;
         }
 
-        if(params.size() != 2)
-        {
-            std::cerr << "wrong number of parameters" << std::endl;
-            return 0u;
-        }
-
-        const std::string& username = params[0];
-        const std::string& password = params[1];
+        const std::string& username = (*params)[0];
+        const std::string& password = (*params)[1];
         uint64_t encryptedPassword = encrypt(password);
 
-        params[1] = std::to_string(encryptedPassword);
+        (*params)[1] = std::to_string(encryptedPassword);
 
         pqxx::nontransaction txn(sql);
-        pqxx::result result = txn.exec_params("INSERT INTO users (username, password) VALUES ($1, $2)", params[0], params[1]);
+        pqxx::result result = txn.exec_params("INSERT INTO users (username, password) VALUES ($1, $2)", (*params)[0], (*params)[1]);
 
         uint64_t newToken = getNewToken();
         std::cout << "newToken " << newToken <<  std::endl;
@@ -145,29 +166,15 @@ int main()
     ([&sql, &goodTokens](const crow::request& req)-> uint64_t
     {
         std::cout << "hit login POST" << std::endl;
-        if(req.body == "")
-        {
-            std::cout << "blank login" << std::endl;
-            return 0u;
-        }
-        std::cout << "with body " << req.body << std::endl;
 
-        std::vector<std::string> params{};
-        std::string segment;
-        while(std::getline(std::stringstream(req.body), segment, ' '))
+        std::optional<std::vector<std::string>> params = getLoginParams(req.body);
+        if(!params)
         {
-            std::cout << "param: " << segment << std::endl;
-            params.push_back(segment);
+            return 0;
         }
 
-        if(params.size() != 2)
-        {
-            std::cerr << "wrong number of parameters" << std::endl;
-            return 0u;
-        }
-
-        const std::string& username = params[0];
-        const std::string& password = params[1];
+        const std::string& username = (*params)[0];
+        const std::string& password = (*params)[1];
         uint64_t encryptedPassword = encrypt(password);
 
         pqxx::nontransaction txn(sql);
