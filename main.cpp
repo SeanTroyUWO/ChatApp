@@ -237,29 +237,17 @@ int main()
         else
         {
             std::cout << "no new message: " << data << std::endl;
-            return crow::response(400);
+            return;
         }
 
         std::cout << " new message: " << data << std::endl;
         pqxx::nontransaction txn(sql);
-        pqxx::result result = txn.exec_params("INSERT INTO message (fromid, toid, timstamp, text) SELECT (fromUsers.id, toUsers.id, NOW(), $3)"
+        pqxx::result result = txn.exec_params("INSERT INTO message (fromid, toid, timstamp, text) SELECT fromUsers.id, toUsers.id, NOW(), $3"
                                               " FROM users AS fromUsers"
                                               " INNER JOIN users AS toUsers ON toUsers.username = $2"
                                               " WHERE fromUsers.username = $1", from, to, text);
 
-        std::vector<crow::json::wvalue> messages{};
-        for(auto const &row : result)
-        {
-            crow::json::wvalue message;
-            message["username"] = row["username"].as<std::string>();
-            message["text"] = row["text"].as<std::string>();
-            std::cout << "message: " << row["username"].as<std::string>() << ":" << row["text"].as<std::string>() << std::endl;
-            messages.emplace_back(std::move(message));
-        }
-        crow::json::wvalue ret;
-        ret["content"] = std::move(messages);
-        conn.send_text(ret.dump());
-        return crow::response(200);
+        return;
     });
 
     uint16_t portNum;
