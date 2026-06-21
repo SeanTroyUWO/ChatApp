@@ -97,8 +97,21 @@ func connectMessages(serverURL string) *websocket.Conn {
 	return conn
 }
 
-func sendMessage(conn *websocket.Conn, text string) {
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(text)); err != nil {
+type newMessage struct {
+	Text string `json:"text"`
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+func sendMessage(conn *websocket.Conn, from string, to string, text string) {
+	payload, err := json.Marshal(struct {
+		NewMessage newMessage `json:"new_message"`
+	}{NewMessage: newMessage{Text: text, From: from, To: to}})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := conn.WriteMessage(websocket.TextMessage, payload); err != nil {
 		log.Fatal(err)
 	}
 	readMessages(conn)
@@ -107,6 +120,7 @@ func sendMessage(conn *websocket.Conn, text string) {
 func main() {
 	username := flag.String("username", "Guest", "Your username")
 	flag.Parse()
+	to := "sean"
 
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, relying on real environment variables")
@@ -146,7 +160,7 @@ func main() {
 			}
 			text = strings.TrimSpace(text)
 
-			sendMessage(conn, text)
+			sendMessage(conn, *username, to, text)
 		}
 	}
 }
